@@ -4,7 +4,7 @@ import logging
 import subprocess
 
 
-TEMP_DIR = "/tmp/defects4j_checkout"
+TEMP_DIR = "/mnt/data1/defects4j_checkout"
 
 
 def checkout_version(pid, bid, version_suffix="b", force=False):
@@ -17,7 +17,7 @@ def checkout_version(pid, bid, version_suffix="b", force=False):
     version = f"{bid}{version_suffix}"
     checkout_dir = os.path.join(
         TEMP_DIR,
-        f"{pid.lower()}_{bid}_{"buggy" if version_suffix == "b" else "fixed"}"
+        f'{pid.lower()}_{bid}_{"buggy" if version_suffix == "b" else "fixed"}'
     )
 
     if os.path.exists(checkout_dir):
