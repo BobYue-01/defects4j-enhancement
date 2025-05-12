@@ -1,6 +1,5 @@
 import logging
 from tqdm import tqdm
-from process_instance import process_instance
 from json_file import load_file, save_to_file
 
 
@@ -46,7 +45,19 @@ if __name__ == "__main__":
 
     # 处理数据集
     make_sharegpt_dataset(
-        orginal_file="dataset.json",
-        output_dir="sharegpt_dataset.json",
+        orginal_file="oracle_file_dataset.json",
+        output_dir="sharegpt_oracle_file_dataset.json",
     )
-    logging.info("数据集处理完成，保存到 sharegpt_dataset.json")
+    make_sharegpt_dataset(
+        orginal_file="oracle_file_swe_dataset.json",
+        output_dir="sharegpt_oracle_file_swe_dataset.json",
+    )
+    make_sharegpt_dataset(
+        orginal_file="oracle_scope_dataset.json",
+        output_dir="sharegpt_oracle_scope_dataset.json",
+    )
+    make_sharegpt_dataset(
+        orginal_file="oracle_scope_swe_dataset.json",
+        output_dir="sharegpt_oracle_scope_swe_dataset.json",
+    )
+    logging.info("数据集处理完成")

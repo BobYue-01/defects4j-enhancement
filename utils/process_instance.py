@@ -3,7 +3,8 @@ import logging
 import subprocess
 from checkout_version import checkout_version, clear_temp_dir
 from extract_readme import extract_readme
-from locate_oracle import locate_oracle
+from locate_oracle_file import locate_file
+from locate_oracle_scope import locate_by_patch
 
 
 PATCH_EXAMPLE = """--- a/file.py
@@ -62,30 +63,59 @@ PATCH_EXAMPLE = """--- a/file.py
      return points"""
 
 
-def add_lines_list(content):
+def add_lines_list(content, start=-1, end=int(1e5)):
     content_with_lines = list()
-    for ix, line in enumerate(content.split("\n"), start=1):
-        content_with_lines.append(f"{ix} {line}")
+    for ix, line in enumerate(content.splitlines(), start=1):
+        if ix >= start and ix <= end:
+            content_with_lines.append(f"{ix} {line}")
     return content_with_lines
 
 
-def add_lines(content):
-    return "\n".join(add_lines_list(content))
+def add_lines(content, start=-1, end=int(1e5)):
+    return "\n".join(add_lines_list(content, start, end))
 
 
 def make_code_text(files_dict, add_line_numbers=True):
     all_text = ""
-    for filename, contents in sorted(files_dict.items()):
+    for filename, (contents, scopes) in sorted(files_dict.items()):
         all_text += f"[start of {filename}]\n"
-        if add_line_numbers:
-            all_text += add_lines(contents)
+        if scopes:
+            all_text += "(omitted)"
+            for name, type, start, end in scopes:
+                all_text += f"\n{add_lines(contents, start, end)}\n(omitted)"
         else:
-            all_text += contents
+            if add_line_numbers:
+                all_text += add_lines(contents)
+            else:
+                all_text += contents
+
         all_text += f"\n[end of {filename}]\n"
     return all_text.strip("\n")
 
 
-def prompt_style_2(instance):
+def prompt_style(instance):
+    premise = "You will be provided with a partial code base containing bugs to resolve."
+    code_text = make_code_text(instance["file_contents"])
+    instructions = (
+        "I need you to solve this issue by generating a single patch file that I can apply "
+        + "directly to this repository using git apply. Please respond with a single patch "
+        + "file in the following format."
+    )
+    final_text = [
+        premise,
+        "<code>",
+        code_text,
+        "</code>",
+        instructions,
+        "<patch>",
+        PATCH_EXAMPLE,
+        "</patch>",
+    ]
+    final_text = "\n".join(final_text)
+    return final_text
+
+
+def prompt_style_swe(instance):
     premise = "You will be provided with a partial code base and an issue statement explaining a problem to resolve."
     readmes_text = make_code_text(instance["readmes"]) if instance["readmes"] else ""
     code_text = make_code_text(instance["file_contents"])
@@ -125,7 +155,12 @@ def get_file_contents(file_path, logger):
         return ""
 
 
-def process_instance(instance, method="oracle", clear=False):
+def process_instance(
+    instance,
+    method="file",
+    swe_like=True,
+    clear=False
+):
     """
     处理指定的项目和缺陷版本，检出代码并提取 POM 描述和 Oracle 文件。
     """
@@ -144,17 +179,17 @@ def process_instance(instance, method="oracle", clear=False):
     ])
 
     # 提取 README 文件
-    _ = extract_readme(checkout_dir)
-    if _:
-        readme_file, readme_content = _
-        instance["readmes"] = {readme_file: readme_content}
+    extracted = extract_readme(checkout_dir)
+    if extracted:
+        readme_file, readme_content = extracted
+        instance["readmes"] = {readme_file: (readme_content, None)}
     else:
         instance["readmes"] = {}
         logger.warning(f"README 文件不存在")
 
-    if method == "oracle":
-        # 提取 Oracle 文件
-        files = locate_oracle(instance["classes_modified"])
+    if method == "file":
+        # 提取 Oracle 整个文件
+        files = locate_file(instance["classes_modified"])
         relative_dir = subprocess.run(
             f'defects4j export -p "dir.src.classes" -w {checkout_dir}',
             shell=True,
@@ -163,9 +198,34 @@ def process_instance(instance, method="oracle", clear=False):
 
         try:
             instance["file_contents"] = {
-                file: get_file_contents(
-                    os.path.join(checkout_dir, relative_dir, file), logger
+                file: (
+                    get_file_contents(
+                        os.path.join(checkout_dir, relative_dir, file), logger
+                    ),
+                    None
                 ) for file in files
+            }
+        except Exception as e:
+            logger.error(f"文件路径错误：{e}")
+            return None
+
+    elif method == "scope":
+        # 提取 Oracle 补丁 scope
+        diff_file = f"./framework/projects/{project_id}/patches/{bug_id}.src.patch"
+        if not os.path.exists(diff_file):
+            logger.error(f"补丁文件不存在：{diff_file}")
+            return None
+
+        # 提取修改的文件和行号
+        files = locate_by_patch(diff_file, checkout_dir)
+        try:
+            instance["file_contents"] = {
+                file: (
+                    get_file_contents(
+                        os.path.join(checkout_dir, file), logger
+                    ),
+                    scopes
+                ) for file, scopes in files.items()
             }
         except Exception as e:
             logger.error(f"文件路径错误：{e}")
@@ -174,7 +234,9 @@ def process_instance(instance, method="oracle", clear=False):
     if clear:
         clear_temp_dir()
 
-    return prompt_style_2(instance)
+    style_function = prompt_style_swe if swe_like else prompt_style
+
+    return style_function(instance)
 
 
 if __name__ == "__main__":
@@ -189,5 +251,6 @@ if __name__ == "__main__":
     }
 
     # 处理实例
-    result = process_instance(instance, method="oracle")
+    # result = process_instance(instance, method="file")
+    result = process_instance(instance, method="scope")
     print(result)

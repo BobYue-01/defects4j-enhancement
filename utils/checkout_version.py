@@ -4,7 +4,7 @@ import logging
 import subprocess
 
 
-TEMP_DIR = "/mnt/data1/defects4j_checkout"
+TEMP_DIR = "/tmp/defects4j_checkout"
 
 
 def checkout_version(pid, bid, version_suffix="b", force=False):
