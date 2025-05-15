@@ -26,7 +26,7 @@ def calculate_token_length(tokenizer, text):
 
 
 if __name__ == "__main__":
-    ds_dir_1 = "oracle_file_swe_dataset.json"
+    ds_dir_1 = "oracle_scope_dataset.json"
     ds_dir_2 = "oracle_scope_swe_dataset.json"
     # Load the datasets
     ds_1 = load_file(ds_dir_1)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     max_length = max(max(token_lengths_1), max(token_lengths_2))
     ks = int(max_length / MIN_BIN) + 4
     bins = range(0, ks * MIN_BIN, MIN_BIN)
-    ax.hist(token_lengths_1, bins=bins, color='red', alpha=0.5, log=True, label='Oracle File SWE')
+    ax.hist(token_lengths_1, bins=bins, color='red', alpha=0.5, log=True, label='Oracle Scope')
     ax.hist(token_lengths_2, bins=bins, color='blue', alpha=0.5, log=True, label='Oracle Scope SWE')
     ax.set_title('Token Length Distribution Comparison')
     ax.set_xlabel('Token Length')

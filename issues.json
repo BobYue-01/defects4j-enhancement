@@ -345,6 +345,22 @@
     },
     {
         "proj": "Cli",
+        "id": 37,
+        "classes_modified": "org.apache.commons.cli.DefaultParser",
+        "url": "https://issues.apache.org/jira/browse/CLI-265",
+        "title": "Optional argument picking up next regular option as its argument",
+        "description": null
+    },
+    {
+        "proj": "Cli",
+        "id": 38,
+        "classes_modified": "org.apache.commons.cli.DefaultParser",
+        "url": "https://issues.apache.org/jira/browse/CLI-265",
+        "title": "Optional argument picking up next regular option as its argument",
+        "description": null
+    },
+    {
+        "proj": "Cli",
         "id": 39,
         "classes_modified": "org.apache.commons.cli.TypeHandler",
         "url": "https://issues.apache.org/jira/browse/CLI-274",
@@ -2862,6 +2878,14 @@
         "url": "https://github.com/FasterXML/jackson-core/issues/37",
         "title": "JsonParser.getTokenLocation() doesn't update after field names.",
         "description": "There's a unit test to repro the issue below.  Basically, when you're on a FIELD_NAME token, if you call getTokenLocation() and then nextToken() and then getTokenLocation() again, you'll get the same location for both calls to getTokenLocation(), even though you've advanced to a new token.\n\nThe issue seems to be the _nextToken logic in ReaderBasedJsonParser and UTF8StreamJsonParser.  When calling nextToken() on a FIELD_NAME, it calls _nextAfterName(), which updates _currToken but doesn't update _tokenInputRow and _tokenInputCol for the new token's location.\n\nI started to try to fix it, but the _nextToken logic is spread across so much code that it looked like it'd be a pretty major surgery.  Not something I'm willing to do at this point. :-)\n\n```\npublic void testTokenLocationAfterFieldName() throws Exception\n{\n    _testTokenLocationAfterFieldName(false);\n    _testTokenLocationAfterFieldName(true);\n}\n\nprivate void _testTokenLocationAfterFieldName(Boolean useStream) throws Exception\n{\n    final String DOC = \"{\\\"name\\\":123}\";\n    JsonFactory jf = new JsonFactory();\n    JsonParser jp = useStream ?\n            jf.createJsonParser(new ByteArrayInputStream(DOC.getBytes(\"UTF-8\")))\n            : jf.createJsonParser(new StringReader(DOC));\n\n    assertEquals(JsonToken.START_OBJECT, jp.nextToken());\n    assertEquals(JsonToken.FIELD_NAME, jp.nextToken());\n    assertEquals(JsonToken.VALUE_NUMBER_INT, jp.nextToken());\n    assertEquals(1, jp.getTokenLocation().getLineNr());\n    assertEquals(9, jp.getTokenLocation().getColumnNr());\n    jp.close();\n}\n```\n"
+    },
+    {
+        "proj": "JacksonCore",
+        "id": 13,
+        "classes_modified": "com.fasterxml.jackson.core.json.JsonGeneratorImpl",
+        "url": "https://github.com/FasterXML/jackson-core/pull/246",
+        "title": "Fix UTF8JsonGenerator to allow QUOTE_FIELD_NAMES to be toggled.",
+        "description": ""
     },
     {
         "proj": "JacksonCore",
@@ -6233,6 +6257,54 @@
     },
     {
         "proj": "Mockito",
+        "id": 12,
+        "classes_modified": "org.mockito.internal.util.reflection.GenericMaster",
+        "url": "https://code.google.com/archive/p/mockito/issues/188",
+        "title": "@Captor annotation might lead to NPE during autounboxing when capturing primitives",
+        "description": "Say I have a\n@Captor ArgumentCaptor&lt;Double&gt; fooCaptor;\n\nI'd like to have it capture primitive double arguments, but the annotation\ngives me an Object captor.\n\nUnfortunately this also fails in a non-obvious way. I get a\nNullPointerException because fooCaptor.capture() returns an Object, which\nobviously cannot be unboxed to a double.\n\nIt might be nice if @Captor had an optional parameter for specifying the\nclass. This would make one say the type twice in these cases (curse you,\nerasure!), but otherwise one would be forced to remove the @Captor\nannotation, which I'd personally consider even more ugly.\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 13,
+        "classes_modified": "org.mockito.internal.MockHandler",
+        "url": "https://code.google.com/archive/p/mockito/issues/138",
+        "title": "make verify() possible if there is inlined different method call on other mock",
+        "description": "To reproduce, run this as a test case:\n\t\n\tprivate static interface Foo {void setFoo(String bar);}\n\tprivate static interface Bar {String getBar();}\n\t\n\t@Test\n\tpublic void testVerifyFails() throws Exception {\n\t\tFoo foo = Mockito.mock(Foo.class);\n\t\tBar bar = Mockito.mock(Bar.class);\n\t\tbar.getBar();\n\t\tverify(foo).setFoo(bar.getBar());\n\t}\n\nThe verify should fail, since setFoo(String) was never called, but it will\nsucceed.\n\nI'm using 1.8 on Linux, JDK 1.6.\n\nIf you comment out the second-to-last line:\n//              bar.getBar();\nit will fail, complaining like this:\n# Wanted but not invoked:\n# bar.getBar();\n\nSo what seems to be happening is that the mock invocation of getBar(),\npassed as the parameter to the setFoo(String) invocation, confuses verify()\ninto thinking that it should verify getBar(), rather than setFoo(String).\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 14,
+        "classes_modified": "org.mockito.internal.MockHandler;org.mockito.internal.MockitoCore",
+        "url": "https://code.google.com/archive/p/mockito/issues/138",
+        "title": "make verify() possible if there is inlined different method call on other mock",
+        "description": "To reproduce, run this as a test case:\n\t\n\tprivate static interface Foo {void setFoo(String bar);}\n\tprivate static interface Bar {String getBar();}\n\t\n\t@Test\n\tpublic void testVerifyFails() throws Exception {\n\t\tFoo foo = Mockito.mock(Foo.class);\n\t\tBar bar = Mockito.mock(Bar.class);\n\t\tbar.getBar();\n\t\tverify(foo).setFoo(bar.getBar());\n\t}\n\nThe verify should fail, since setFoo(String) was never called, but it will\nsucceed.\n\nI'm using 1.8 on Linux, JDK 1.6.\n\nIf you comment out the second-to-last line:\n//              bar.getBar();\nit will fail, complaining like this:\n# Wanted but not invoked:\n# bar.getBar();\n\nSo what seems to be happening is that the mock invocation of getBar(),\npassed as the parameter to the setFoo(String) invocation, confuses verify()\ninto thinking that it should verify getBar(), rather than setFoo(String).\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 15,
+        "classes_modified": "org.mockito.internal.configuration.injection.FinalMockCandidateFilter",
+        "url": "https://code.google.com/archive/p/mockito/issues/211",
+        "title": "@InjectMocks should carry out their work by the method (and not by field) if available",
+        "description": "@InjectMocks should carry out their work by the method (and not by field) if available\n\nNow @InjectMocks work in properties and this affects CodeCoberage reports :)"
+    },
+    {
+        "proj": "Mockito",
+        "id": 16,
+        "classes_modified": "org.mockito.internal.MockitoCore;org.mockito.Mockito",
+        "url": "https://code.google.com/archive/p/mockito/issues/151",
+        "title": "Stubbing mocks that are configured to return mocks yields exception",
+        "description": "Example:\n\nIMethods mock = mock(IMethods.class, RETURNS_MOCKS);\nwhen(mock.objectReturningMethodNoArgs()).thenReturn(null);"
+    },
+    {
+        "proj": "Mockito",
+        "id": 17,
+        "classes_modified": "org.mockito.internal.creation.MockSettingsImpl;org.mockito.internal.util.MockUtil",
+        "url": "https://code.google.com/archive/p/mockito/issues/152",
+        "title": "User should be able to set serializable and yet configure his own extra interfaces",
+        "description": "Example:\n\nFoo mock = mock(Foo.class, \n  withSettings().serializable().extraInterfaces(Bar.class));"
+    },
+    {
+        "proj": "Mockito",
         "id": 18,
         "classes_modified": "org.mockito.internal.stubbing.defaultanswers.ReturnsEmptyValues",
         "url": "https://github.com/mockito/mockito/issues/210",
@@ -6262,6 +6334,142 @@
         "url": "https://github.com/mockito/mockito/issues/92",
         "title": "Allow convenient spying on abstract classes",
         "description": "I posted this in GoogleCode and was asked to submit in github.\n\nMockito is easy to use when the test needs to provide canned values for a certain method.\n\nBut it gets harder when a canned value isn't sufficient.\n##### Example 1: Fake with trivial Logic\n\n```\ninterface UserAccount {\n  List<String> getEmails();\n  void addEmail(String email);\n  // 12 other methods ...\n}\n```\n\nWhen mocking such domain entity object, it's tedious to manually program getEmails()/addEmail() with when().thenReturn() and to make sure the two methods are logically consistent, that is, getEmails() returns all emails added.\n##### Example 2: callback-style API\n\n```\ninterface AccountService {\n  void getAccount(String id, AsyncCallback<UserAccount> callback);\n}\n```\n\nStubbing AccountService isn't easy. It'd require use of Answer, and the Answer API isn't statically type safe:\n\n```\nwhen(service.getAccount(eq(id), any(AsyncCallback.class)).thenAnswer(new Answer<Void>() {\n  AsyncCallback<UserAccount> callback = (AsyncCallback<UserAccount>) getArguments()[1];\n  ...\n});\n```\n##### Example 3: Uninteresting parameters\n\n```\ninterface AccountRpcService {\n  FutureAccount getAccount(RpcContext context, String id);\n}\n```\n\nNone of the tests care about the context object. It's an uninteresting parameter imposed by the framework.\n\nIf AccountRpcService were directly mocked, all tests would have to use isA() to repetitively mention this uninteresting parameter, like this:\n\n`when(service.getAccount(isA(RpcContext.class), eq(\"id\")).thenReturn(...);`\n\nAnd all other parameters are required to be wrapped in eq().\n#### Proposal\n\nI propose adding support for abstract classes to mockito to make it easier to deal with tests like above:\n##### For example 1\n\n```\nabstract class FakeUserAccount implements UserAccount {\n  private final List<String> emails = new ArrayList<>();\n\n  @Override public void addEmail(String email) {\n    emails.add(email);\n  }\n  @Override List<String> getEmails() {\n    return ImmutableList.copyOf(emails);\n  }\n}\n\n@Fake private FakeUserAccount userAccount; // Mockito instantiates abstract class.\n```\n##### For example 2\n\n```\nabstract class MockAccountService implements AccountService {\n  @Override public void getAccount(String id, AsyncCallback<UserAccount> callback) {\n    callback.onSuccess(getAccount(id));\n  }\n  abstract UserAccount getAccount(String id);\n}\n\n@Fake private MockAccountService service;\n\n...\n\nwhen(service.getAccount(\"id\")).thenReturn(account);\n```\n##### For example 3\n\n```\nabstract class MockAccountRpcService implements AccountRpcService {\n  @Override Future<Account> getAccount(RpcContext context, String id) {\n    checkNotNull(context);  // Common sanity test. Don't have to repeat it in tests.\n    return getAccount(id);\n  }\n\n  abstract Future<Account> getAccount(String id);\n}\n\n@Fake private MockAccountRpcService service;\n\nwhen(service.getAccount(\"id\")).thenReturn(...);\n```\n\nMy work place internally implemented a default Answer to support abstract classes. We found that the support of abstract classes helps us to avoid overusing mocks when we should be using fakes. And in situations like above we get cleaner test code.\n\nBut because it's not integrated in the core Mockito, there are gotchas with our implementation (like, you can't have private/final methods in your fake).\n\nIf the idea sounds okay to give a try, I'll volunteer to submit a patch.\n\nThanks!\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 22,
+        "classes_modified": "org.mockito.internal.matchers.Equality",
+        "url": "https://code.google.com/archive/p/mockito/issues/484",
+        "title": "areEqual does not try == operator for trivial equality case and sometimes has unneccessary exceptions",
+        "description": "<b>What steps will reproduce the problem?</b>\n1. Any class that throws an exception in its equals method.  For example:\n\nprivate final class BadEquals {\n   @Override\n        public boolean equals (Object oth) {\n\t      throw new RuntimeException();\n        }\n   }\n2. Create an instance of that class.  Object badequals=new BadEquals();\n3. Test for equality using org.mockito.internal.matchers.Equality.areEqual:  areEqual(badequals,badequals)\n\n<b>What is the expected output? What do you see instead?</b>\nI expect to see they are equal.\n\nI suspect that the areEqual method is calling the equals method which is throwing an Exception.  In this case, we can use the java equality operator to see that they are equal, bypassing the equals method and its exception.\n\n\n<b>What version of the product are you using? On what operating system?</b>\n\n\n<b>Please provide any additional information below.</b>\n\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 23,
+        "classes_modified": "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs",
+        "url": "https://code.google.com/archive/p/mockito/issues/399",
+        "title": "Deep Stubs are not serializable",
+        "description": "<b>What steps will reproduce the problem?</b>\nimport org.junit.Test;\nimport org.mockito.Matchers;\nimport org.mockito.Mockito;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.ObjectOutputStream;\nimport java.util.Map;\n\npublic class DeepStubsAreNotSerializableTest {\n\n  @Test\n  public void name() throws Exception {\n    Map map = Mockito.mock(Map.class, Mockito.RETURNS_DEEP_STUBS);\n\n    Mockito.when(map.entrySet().contains(Matchers.anyString())).thenReturn(false);\n\n    ByteArrayOutputStream serialized = new ByteArrayOutputStream();\n    new ObjectOutputStream(serialized).writeObject(map);\n  }\n}\n\n<b>What is the expected output? What do you see instead?</b>\njava.io.NotSerializableException: org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs$1\n\tat java.io.ObjectOutputStream.writeObject0(ObjectOutputStream.java:1180)\n\tat java.io.ObjectOutputStream.writeObject(ObjectOutputStream.java:346)\n        ...\n\n<b>Please use labels and text to provide additional information.</b>\nMockito 1.9.5, and earlier versions"
+    },
+    {
+        "proj": "Mockito",
+        "id": 24,
+        "classes_modified": "org.mockito.internal.stubbing.defaultanswers.ReturnsEmptyValues",
+        "url": "https://code.google.com/archive/p/mockito/issues/467",
+        "title": "compareTo returns 1 for the same object",
+        "description": "@Test\n    public void shouldCompareToTreatAsEqualMocksWithTheSameReferences() {\n        //given\n        Date today    = mock(Date.class);\n\n        //when\n        Set&lt;Date&gt; set = new TreeSet&lt;Date&gt;();\n        set.add(today);\n        set.add(today);\n\n        //then\n        assertEquals(1, set.size());\n    }\n\n<b>What is the expected output? What do you see instead?</b>\nTest passes\n\n<b>What version of the product are you using? On what operating system?</b>\nWindows/Linux x66 jdk1.7\n\n<b>Please provide any additional information below.</b>\ncomapreTo should take into account reference equality\n\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 25,
+        "classes_modified": "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs",
+        "url": "https://code.google.com/archive/p/mockito/issues/230",
+        "title": "Deep mock fails for generic classes",
+        "description": "Consider the following sample:\n\n    static interface ListSet extends List&lt;Set&gt; {}\n    @Test\n    public void testDeepMockWithClass() {\n        final ListSet mock = Mockito.mock(ListSet.class, Mockito.RETURNS_DEEP_STUBS);\n        final Set mock2 = mock.get(0);\n    }\n\nI get an exception on the last line since mock.get(0) is not of type Set.\nI would expect Mockito to make the deep mock of the correct type instead of just Object.\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 26,
+        "classes_modified": "org.mockito.internal.util.Primitives",
+        "url": "https://code.google.com/archive/p/mockito/issues/352",
+        "title": "Mockito-mocked methods returning primitive types other than \"int\" throw ClassCastException: java.lang.Integer",
+        "description": "Mockito is returning a boxed Integer when it should be returning a boxed Long. Similarly for other types. I'm preparing a fix and will have a pull request very soon. It would be great to get this fixed before 1.9.5 final is cut.\n\nSee dexmaker issue 10\nhttp://code.google.com/p/dexmaker/issues/detail?id=10"
+    },
+    {
+        "proj": "Mockito",
+        "id": 27,
+        "classes_modified": "org.mockito.internal.util.MockUtil",
+        "url": "https://code.google.com/archive/p/mockito/issues/282",
+        "title": "MockUtil.resetMock() doesn't create InvocationNotifierHandler when recreating a filter",
+        "description": "<b>What steps will reproduce the problem?</b>\n1. create a mock with verbose logging\n2. reset a mock\n\n<b>What is the expected output? What do you see instead?</b>\nVerbose logging doesn't work after reseting a mock.\n\n<b>What version of the product are you using? On what operating system?</b>\n1.9.0-rc1\n\nPatch attached.\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 28,
+        "classes_modified": "org.mockito.internal.configuration.DefaultInjectionEngine",
+        "url": "https://code.google.com/archive/p/mockito/issues/236",
+        "title": "@InjectMocks injects mock into Object-typed fields",
+        "description": "When using @InjectMocks on a class which has fields of the type &quot;Object&quot;, the mock gets injected into that field instead of being only injected into the field it is supposed to be injected to.\n\nSee attachments for a testcase on this problem.\n\nIt would be better if @InjectMocks would leave the Object fields alone, because this behaviour is not expected and it is causing my own unit tests to fail. One example of such a failure is the production code having a Object-constant (see the commented out one in TestService as illustration) which mockito tries to override with a mock, but fails because PowerMock is not available. \n\nAnd even if i set the Object-field to non-static, it mangles the logic of my production code, because on class initialization the object is used to register a listener in a different class with that object as a map accessor. Now when mockito overrides the Object-field, the requests are added with the mock object instead of the original Object-instance and thus no listeners are being found by the async service my service uses.\n\nI don't like the idea of removing the Object-field as an accessor to instead use &quot;this&quot; (not explicit enough for readability purposes) or some other type as the accessor-type (just more code), instead I think this should better be fixed.\n\nSurely there will be more occasions this will make me problems in writing unit tests.\n\nBest regards\nsubes"
+    },
+    {
+        "proj": "Mockito",
+        "id": 29,
+        "classes_modified": "org.mockito.internal.matchers.Same",
+        "url": "https://code.google.com/archive/p/mockito/issues/229",
+        "title": "@Mock fields in super test class are not injected on @InjectMocks fields",
+        "description": "<b>What steps will reproduce the problem?</b>\n1. Consider there are 2 Junit 4 tests, one is BaseTest and the other is ImplicitTest like bellow:\n   @Ignore\n   public abstract class BaseTest {\n     @Mock\n     protected DaoA dao;\n     \n   }\n\n   \n   public class ImplicitTest extends BaseTest {\n     @InjectMocks\n     private SystemUnderTest sut = new SystemUnderTest();\n\n     @Before\n     public void setup() {\n       MockitoAnnotations.initMocks(this);\n     }\n    \n     @Test\n     public void test1() {\n        sut.businessMethodA();\n     }     \n   }\n\n   public class SystemUnderTest {\n     private DaoA dao;\n     public void setDao(DaoA dao) {\n       this.dao = dao;\n     }\n     \n     public void businessMethodA() {\n        dao.doQuery();\n     }\n   }\n\n\n   public class DaoA {\n     public void doQuery(){\n     }\n   }\n2. when I run &quot;test1()&quot; method, a NullPointException will throw out as bellow:\n   java.lang.NullPointerException\n\tat SystemUnderTest.businessMethodA(SystemUnderTest.java:9)\n\tat ImplicitTest.test1(ImplicitTest.java:17)\n\n3. when I add one more line code in &quot;test1()&quot; then the case can pass, the &quot;test1()&quot; method when the case pass is :\n    @Test\n    public void test1() {\n        sut.setDao(dao);\n        sut.businessMethodA();\n    }\n\n\n<b>What is the expected output? What do you see instead?</b>\nexpected: I can inject the mock object defined by @Mock in super class\nactual :  The mock object defined by @Mock annotation in super class can NOT inject into the SUT defined in child class.\n\n<b>What version of the product are you using? On what operating system?</b>\nMockito Version: mockito-all-1.8.5.jar\nOperation System: windows vista\njava -version :\njava version &quot;1.6.0_20&quot;\nJava(TM) SE Runtime Environment (build 1.6.0_20-b02)\nJava HotSpot(TM) Client VM (build 16.3-b01, mixed mode, sharing)\n\n<b>Please provide any additional information below.</b>\n\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 30,
+        "classes_modified": "org.mockito.exceptions.Reporter;org.mockito.internal.stubbing.defaultanswers.ReturnsSmartNulls",
+        "url": "https://code.google.com/archive/p/mockito/issues/225",
+        "title": "SmartNulls should identify the arguments that the stubbed method was invoked with",
+        "description": "I've started mocking with RETURNS_SMART_NULLS. It is very useful and I like the fact that it can be configured with the @Mock annotation. I agree with the comment that it should be the default in Mockito 2.0. Returning null values from mocked methods encourages writing code that is designed to handle nulls, which IMO is a code smell.\n\nOne thing that would be really nice is if the arguments of the stubbed method were retained and then printed when the smart null is used. The reported message is typically correct: &quot;Because this method was *not* stubbed correctly:&quot;, but this is generally because I've made some mistake in matching the parameters of the stubbed method. If I could see the arguments that were used in the invocation it would mean that I wouldn't need to debug into the method to check them."
+    },
+    {
+        "proj": "Mockito",
+        "id": 31,
+        "classes_modified": "org.mockito.internal.stubbing.defaultanswers.ReturnsSmartNulls",
+        "url": "https://code.google.com/archive/p/mockito/issues/225",
+        "title": "SmartNulls should identify the arguments that the stubbed method was invoked with",
+        "description": "I've started mocking with RETURNS_SMART_NULLS. It is very useful and I like the fact that it can be configured with the @Mock annotation. I agree with the comment that it should be the default in Mockito 2.0. Returning null values from mocked methods encourages writing code that is designed to handle nulls, which IMO is a code smell.\n\nOne thing that would be really nice is if the arguments of the stubbed method were retained and then printed when the smart null is used. The reported message is typically correct: &quot;Because this method was *not* stubbed correctly:&quot;, but this is generally because I've made some mistake in matching the parameters of the stubbed method. If I could see the arguments that were used in the invocation it would mean that I wouldn't need to debug into the method to check them."
+    },
+    {
+        "proj": "Mockito",
+        "id": 32,
+        "classes_modified": "org.mockito.internal.configuration.SpyAnnotationEngine",
+        "url": "https://code.google.com/archive/p/mockito/issues/216",
+        "title": "the field name not used to identify @Spy objects ",
+        "description": "spy objects created with @Spy annotation are note named against the field name, as mocks created with @Mock.\nI'd like to have this feature to use @InjectMocks with two spy objects of the same type."
+    },
+    {
+        "proj": "Mockito",
+        "id": 33,
+        "classes_modified": "org.mockito.internal.invocation.InvocationMatcher",
+        "url": "https://code.google.com/archive/p/mockito/issues/200",
+        "title": "polimorphic call not dispatched correctly",
+        "description": "Edge case around generics + inheritance. Below code did not work correctly due to polimorphic call not dispatched to correct method.\n\n\n    protected interface MyIterable&lt;T&gt; extends Iterable&lt;T&gt; {\n        public MyIterator&lt;T&gt; iterator();\n    }\n\n    protected interface MyIterator&lt;T&gt; extends Iterator&lt;T&gt; {\n        // adds nothing here\n    }\n\n    MyIterator&lt;String&gt; myIterator = Mockito.mock(MyIterator.class);\n    MyIterable&lt;String&gt; iterable = Mockito.mock(MyIterable.class);\n\n    @Test\n    public void shouldStubbingWork() {\n        Mockito.when(iterable.iterator()).thenReturn(myIterator);\n        Assert.assertNotNull(((Iterable) iterable).iterator());\n        Assert.assertNotNull(iterable.iterator());\n    }\n    \n    @Test\n    public void shouldVerificationWorks() {\n        iterable.iterator();\n        \n        verify(iterable).iterator();\n        verify((Iterable) iterable).iterator();\n    }"
+    },
+    {
+        "proj": "Mockito",
+        "id": 34,
+        "classes_modified": "org.mockito.internal.invocation.InvocationMatcher",
+        "url": "https://code.google.com/archive/p/mockito/issues/157",
+        "title": "Invocation.thenReturn() may fail with varargs (similar to issue 123)",
+        "description": "<b>What steps will reproduce the problem?</b>\n1. Has a class with a method like this: blah(Object... o)\n2. Stub it like this: when(mock.blah(anyVararg())).thenReturn(-1)\n3. Run test.\n\n<b>What is the expected output? What do you see instead?</b>\nIt should return -1 on both calls, instead it threw an \nArrayIndexOutOfBoundsException on the second assert\n\n<b>What version of the product are you using? On what operating system?</b>\n1.8.1\nMacOS 10.5.8\n\n<b>Please provide any additional information below.</b>\n\tclass Foo {\n\t\tint blah(Object... o) {\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\t@Test\n\tpublic void shouldNotThrowAnyException() throws Exception {\n\t\tFoo foo = mock(Foo.class);\n\n\t\twhen(foo.blah(anyVararg())).thenReturn(-1);\n\t\t\n\t\tassertEquals(-1, foo.blah(&quot;foo&quot;));\n\t\tassertEquals(-1, foo.blah());\n\t}\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 35,
+        "classes_modified": "org.mockito.Matchers",
+        "url": "https://code.google.com/archive/p/mockito/issues/98",
+        "title": "Verification using isA(int.class) gives NullPointerException",
+        "description": "<b>What steps will reproduce the problem?</b>\n1. Create an object that has a method do(int aValue)\n2. Create a spy for this object. T spy = spy(obj)\n3. Verify behavior using verify(spy).do(isA(int.class))\n\n<b>What is the expected output? What do you see instead?</b>\n\nExpected output is that there will be a normal verification (either pass\nthe test or &quot;wanted but not invoked&quot; result). \n\n<b>What version of the product are you using? On what operating system?</b>\n\n1.7, SLED 10 \n\n<b>Please provide any additional information below.</b>\n\nThis issue is mainly a usability issue. It is strange however that\nisA(String.class) works but isA(int.class) does not. Also\nisA(Integer.class) does not work. \n\nThis problem is mainly a usability issue. It occurs only for methods that\nhave primitive arguments instead of objects. In any case, either mockito\nshould support the verifications (preferred) or it should give a clear\nerror message when running the test. Currently, we get a NullPointerException: \n\njava.lang.NullPointerException\n\tat itoamapi.MockitoTest.testX(MockitoTest.java:22)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat\nsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)\n\tat\nsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)\n\tat java.lang.reflect.Method.invoke(Method.java:597)\n\tat junit.framework.TestCase.runTest(TestCase.java:168)\n\tat junit.framework.TestCase.runBare(TestCase.java:134)\n\tat junit.framework.TestResult$1.protect(TestResult.java:110)\n\tat junit.framework.TestResult.runProtected(TestResult.java:128)\n\tat junit.framework.TestResult.run(TestResult.java:113)\n\tat junit.framework.TestCase.run(TestCase.java:124)\n\tat junit.framework.TestSuite.runTest(TestSuite.java:232)\n\tat junit.framework.TestSuite.run(TestSuite.java:227)\n\tat\norg.junit.internal.runners.OldTestClassRunner.run(OldTestClassRunner.java:76)\n\tat\norg.eclipse.jdt.internal.junit4.runner.JUnit4TestReference.run(JUnit4TestReference.java:45)\n\tat\norg.eclipse.jdt.internal.junit.runner.TestExecution.run(TestExecution.java:38)\n\tat\norg.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(RemoteTestRunner.java:460)\n\tat\norg.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(RemoteTestRunner.java:673)\n\tat\norg.eclipse.jdt.internal.junit.runner.RemoteTestRunner.run(RemoteTestRunner.java:386)\n\tat\norg.eclipse.jdt.internal.junit.runner.RemoteTestRunner.main(RemoteTestRunner.java:196)\n\n\n\n\n"
+    },
+    {
+        "proj": "Mockito",
+        "id": 36,
+        "classes_modified": "org.mockito.internal.invocation.Invocation",
+        "url": "https://code.google.com/archive/p/mockito/issues/140",
+        "title": "Inform the user immediately when she tries to 'callRealMethod()' on a mock of a interface",
+        "description": "Inform the user immediately when she tries to 'callRealMethod()' on a mock\nof a interface:\n\n//fail fast when:\nwhen(mockOfAnIterface.doStuff()).thenCallRealMethod();"
+    },
+    {
+        "proj": "Mockito",
+        "id": 37,
+        "classes_modified": "org.mockito.internal.stubbing.answers.AnswersValidator",
+        "url": "https://code.google.com/archive/p/mockito/issues/140",
+        "title": "Inform the user immediately when she tries to 'callRealMethod()' on a mock of a interface",
+        "description": "Inform the user immediately when she tries to 'callRealMethod()' on a mock\nof a interface:\n\n//fail fast when:\nwhen(mockOfAnIterface.doStuff()).thenCallRealMethod();"
+    },
+    {
+        "proj": "Mockito",
+        "id": 38,
+        "classes_modified": "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool",
+        "url": "https://code.google.com/archive/p/mockito/issues/79",
+        "title": "Mockito's sources in the central Maven repository should be in a *-sources.jar file",
+        "description": "Right now, in http://repo1.maven.org/maven2/org/mockito/, the binaries and sources of \nMockito are packed in the same JAR file (e.g. mockito-all-1.7.jar). This is against \nthe Maven conventions. As a result, at least IntelliJ IDEA does not automatically \ndetect the sources (i.e. no quick access to documentation, no seeing of method \nparameter names).\n\nThe convention in Maven is to have the binaries in one JAR, the sources in another JAR \nwhose name is prefixed &quot;-sources&quot; and the javadocs in a third JAR prefixed &quot;-javadoc&quot;. \nSee http:// \nmaven.apache.org/guides/mini/guide-central-repository- \nupload.html#Manual_upload_of_artifacts\n\nThe expected way to organize the files is:\n\nmockito-all-X.Y.jar  -- the .class files and everything that is required at runtime\nmockito-all-X.Y-sources.jar  -- the .java files and other sources\nmockito-all-X.Y-javadoc.jar  -- the javadocs (I don't use them, but maybe someone else \nlikes them)\n\nOrganizing them like this makes the library compatible with all Maven users. An added \nbenefit is that the binaries JAR becomes about 50% smaller, because the source code \nwill be in a separate file.\n"
     },
     {
         "proj": "Time",
@@ -6350,6 +6558,14 @@
         "url": "https://github.com/JodaOrg/joda-time/issues/18",
         "title": "NPE in DateTimeZoneBuilder",
         "description": "When a DateTimeZone is build with duplicate-named 'recurring saving time' in a first thread, all goes Ok: a warning message is generated and an identifier is automatically generated in PrecalculatedZone.create(). When a second thread does the same, an NPE is generated in ZoneInfoCompiler.verbose().\n\nThe cause is that the cVerbose ThreadLocal is incorrectly initialized in ZoneInfoCompiler:\n\n``` java\n   static {\n        cVerbose.set(Boolean.FALSE);\n    }\n```\n\n...will initialize cVerbose only for the first thread and not for the subsequent ones. The NPE is caused by the autoboxing in:\n\n``` java\n   public static boolean verbose() {\n        return cVerbose.get();\n    }\n```\n\nA better approach could be to remove the initialization and test for null:\n\n``` java\npublic static boolean verbose(){\n    Boolean verbose = cVerbose.get();\n    return (verbose != null) ? verbose : false;\n}\n```\n\n---\n\nHere follows a test case:\n\n``` java\n    @Test\n    public void testDateTimeZoneBuilder() throws Exception {\n        getTestDataTimeZoneBuilder().toDateTimeZone(\"TestDTZ1\", true);\n        Thread t = new Thread(new Runnable() {\n            @Override\n            public void run() {\n                getTestDataTimeZoneBuilder().toDateTimeZone(\"TestDTZ2\", true);\n            }\n        });\n        t.start();\n        t.join();\n    }\n\n    private DateTimeZoneBuilder getTestDataTimeZoneBuilder() {\n         return new DateTimeZoneBuilder()\n         .addCutover(1601, 'w', 1, 1, 1, false, 7200000)\n         .setStandardOffset(3600000)\n         .addRecurringSavings(\"\", 3600000, 1601, Integer.MAX_VALUE, 'w', 3, -1, 1, false, 7200000)\n         .addRecurringSavings(\"\", 0, 1601, Integer.MAX_VALUE, 'w', 10, -1, 1, false, 10800000);\n    }\n```\n"
+    },
+    {
+        "proj": "Time",
+        "id": 12,
+        "classes_modified": "org.joda.time.LocalDate;org.joda.time.LocalDateTime",
+        "url": "https://github.com/JodaOrg/joda-time/issues/8",
+        "title": "Check Calendar.ERA in LocalDate.fromCalendarFields",
+        "description": ""
     },
     {
         "proj": "Time",

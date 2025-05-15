@@ -190,15 +190,16 @@ def locate_by_patch(diff_file: str, src_root: str) -> List[Tuple[str, List[Scope
     result = {}
 
     for hunk in hunks:
-        file_path = os.path.join(src_root, hunk[0])
+        rel_file_path = hunk[0]
+        abs_file_path = os.path.join(src_root, rel_file_path)
         start_line = hunk[1]
         end_line = hunk[2]
 
         # 读取源文件
-        if not os.path.exists(file_path):
-            logger.warning(f"文件不存在：{file_path}")
+        if not os.path.exists(abs_file_path):
+            logger.warning(f"文件不存在：{abs_file_path}")
             continue
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(abs_file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
         # 提取作用域
@@ -206,18 +207,18 @@ def locate_by_patch(diff_file: str, src_root: str) -> List[Tuple[str, List[Scope
 
         # 找到最小覆盖作用域
         covering_scopes = minimal_covering_scopes(scopes, [(start_line, end_line)])
-        if file_path not in result:
-            result[file_path] = []
-        result[file_path].extend(covering_scopes)
+        if rel_file_path not in result:
+            result[rel_file_path] = []
+        result[rel_file_path].extend(covering_scopes)
 
-    for file_path, scopes in result.items():
+    for rel_file_path, scopes in result.items():
         # 去重
         merged: Dict[Tuple, Scope] = {}
         for sc in scopes:
             key = (sc[0], sc[1], sc[2], sc[3])
             merged[key] = sc
         # 输出一个有序列表
-        result[file_path] = sorted(merged.values(), key=lambda t: t[2])
+        result[rel_file_path] = sorted(merged.values(), key=lambda t: t[2])
 
     return result
 

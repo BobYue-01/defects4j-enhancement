@@ -9,6 +9,7 @@ project_repos/*
 major/
 work/
 *.log
+checkout/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

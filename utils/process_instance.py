@@ -63,6 +63,59 @@ PATCH_EXAMPLE = """--- a/file.py
      return points"""
 
 
+FULL_PATCH_PROMPT = """[start of file_a.py]
+{hunk 0}
+def euclidean(a, b):
+    while b:
+    a, b = b, a % b
+    return a
+{/hunk 0}
+{hunk 1}
+def bitcount(n):
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1
+    return count
+{/hunk 1}
+[end of file_a.py]
+[start of file_b.py]
+{hunk 2}
+def sqrt(x, epsilon):
+    approx = x / 2
+    while abs(x - approx) > epsilon:
+        approx = 0.5 * (approx + x / approx)
+    return approx
+{/hunk 2}
+[end of file_b.py]"""
+
+FULL_PATCH_REPLY = """[start of file_a.py]
+{hunk 0}
+def euclidean(a, b):
+    if b == 0:
+        return a
+    return euclidean(b, a % b)
+{/hunk 0}
+{hunk 1}
+def bitcount(n):
+    count = 0
+    while n:
+        n ^= n - 1
+        count += 1
+    return count
+{/hunk 1}
+[end of file_a.py]
+[start of file_b.py]
+{hunk 2}
+def sqrt(x, epsilon):
+    approx = x / 2
+    while abs(x - approx ** 2) > epsilon:
+        approx = 0.5 * (approx + x / approx)
+    return approx
+{/hunk 2}
+[end of file_b.py]"""
+
+
 def add_lines_list(content, start=-1, end=int(1e5)):
     content_with_lines = list()
     for ix, line in enumerate(content.splitlines(), start=1):
@@ -75,7 +128,7 @@ def add_lines(content, start=-1, end=int(1e5)):
     return "\n".join(add_lines_list(content, start, end))
 
 
-def make_code_text(files_dict, add_line_numbers=True):
+def make_code_text_full(files_dict, add_line_numbers=True):
     all_text = ""
     for filename, (contents, scopes) in sorted(files_dict.items()):
         all_text += f"[start of {filename}]\n"
@@ -93,9 +146,28 @@ def make_code_text(files_dict, add_line_numbers=True):
     return all_text.strip("\n")
 
 
+def make_code_text_full(files_dict, add_line_numbers=True):
+    all_text = ""
+    hunk_i = 0
+    for filename, (contents, scopes) in sorted(files_dict.items()):
+        all_text += f"[start of {filename}]\n"
+        if scopes:
+            for name, type, start, end in scopes:
+                all_text += f"<hunk {hunk_i}>\n{add_lines(contents, start, end)}\n</hunk {hunk_i}>\n"
+                hunk_i += 1
+        else:
+            if add_line_numbers:
+                all_text += add_lines(contents)
+            else:
+                all_text += contents
+
+        all_text += f"\n[end of {filename}]\n"
+    return all_text.strip("\n")
+
+
 def prompt_style(instance):
     premise = "You will be provided with a partial code base containing bugs to resolve."
-    code_text = make_code_text(instance["file_contents"])
+    code_text = make_code_text_full(instance["file_contents"])
     instructions = (
         "I need you to solve this issue by generating a single patch file that I can apply "
         + "directly to this repository using git apply. Please respond with a single patch "
@@ -115,28 +187,40 @@ def prompt_style(instance):
     return final_text
 
 
-def prompt_style_swe(instance):
-    premise = "You will be provided with a partial code base and an issue statement explaining a problem to resolve."
-    readmes_text = make_code_text(instance["readmes"]) if instance["readmes"] else ""
-    code_text = make_code_text(instance["file_contents"])
-    instructions = (
-        "I need you to solve this issue by generating a single patch file that I can apply "
-        + "directly to this repository using git apply. Please respond with a single patch "
-        + "file in the following format."
-    )
+def prompt_style_with_issue(instance, issues=True, patch=True, readmes=True):
+    if issues:
+        premise = "You will be provided with a partial code base and an issue statement explaining a problem to resolve."
+    else:
+        premise = "You will be provided with a partial code base containing bugs to resolve."
+    readmes_text = make_code_text_full(instance["readmes"]) if instance["readmes"] else ""
+    code_text = make_code_text_full(instance["file_contents"])
+    if patch:
+        instructions = (
+            "I need you to solve this issue by generating a single patch file that I can apply "
+            + "directly to this repository using git apply. Please respond with a single patch "
+            + "file in the following format."
+        )
+    else:
+        instructions = (
+            "I need you to solve this issue by generating fixed codes for each hunk. "
+            + "For example, given the following code:\n"
+            + FULL_PATCH_PROMPT
+            + "\nPlease respond with the following format."
+        )
     problem_statement = instance["problem_statement"]
     final_text = [
         premise,
-        "<issue>",
-        problem_statement,
-        "</issue>",
+        *(
+            ["<issue>", problem_statement, "</issue>"]
+            if issues else []
+        ),
         "<code>",
-        readmes_text,
+        *( [readmes_text] if issues and readmes else [] ),
         code_text,
         "</code>",
         instructions,
         "<patch>",
-        PATCH_EXAMPLE,
+        PATCH_EXAMPLE if patch else FULL_PATCH_REPLY,
         "</patch>",
     ]
     final_text = "\n".join(final_text)
@@ -158,7 +242,9 @@ def get_file_contents(file_path, logger):
 def process_instance(
     instance,
     method="file",
-    swe_like=True,
+    issues=True,
+    patch=True,
+    readmes=True,
     clear=False
 ):
     """
@@ -174,9 +260,15 @@ def process_instance(
         logger.error(f"检出失败：{project_id} {bug_id}")
         return None
 
-    instance["problem_statement"] = "\n".join([
-        instance["title"], instance["description"]
-    ])
+    if instance["title"] and instance["description"]:
+        instance["problem_statement"] = "\n".join([
+            instance["title"],
+            instance["description"]
+        ])
+    elif instance["title"]:
+        instance["problem_statement"] = instance["title"]
+    elif instance["description"]:
+        instance["problem_statement"] = instance["description"]
 
     # 提取 README 文件
     extracted = extract_readme(checkout_dir)
@@ -234,9 +326,7 @@ def process_instance(
     if clear:
         clear_temp_dir()
 
-    style_function = prompt_style_swe if swe_like else prompt_style
-
-    return style_function(instance)
+    return prompt_style_with_issue(instance, issues=issues, patch=patch, readmes=readmes)
 
 
 if __name__ == "__main__":
@@ -252,5 +342,5 @@ if __name__ == "__main__":
 
     # 处理实例
     # result = process_instance(instance, method="file")
-    result = process_instance(instance, method="scope")
+    result = process_instance(instance, method="scope", patch=False)
     print(result)

@@ -4,7 +4,7 @@ import logging
 import subprocess
 
 
-TEMP_DIR = "/tmp/defects4j_checkout"
+TEMP_DIR = "./checkout"
 
 
 def checkout_version(pid, bid, version_suffix="b", force=False):
@@ -53,8 +53,8 @@ def clear_temp_dir():
 
 if __name__ == "__main__":
     # Example usage
-    pid = "Lang"
-    bid = 1
+    pid = "Closure"
+    bid = 29
     version_suffix = "b"
     checkout_dir = checkout_version(pid, bid, version_suffix)
     if checkout_dir:
