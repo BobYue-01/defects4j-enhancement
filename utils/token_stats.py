@@ -1,3 +1,4 @@
+import os
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from json_file import load_file, save_to_file
@@ -25,33 +26,34 @@ def calculate_token_length(tokenizer, text):
     return token_length
 
 
-if __name__ == "__main__":
-    ds_dir_1 = "oracle_scope_dataset.json"
-    ds_dir_2 = "oracle_scope_swe_dataset.json"
+def calculate_token_stats(ds_dir):
+    # Load the dataset
+    ds = load_file(ds_dir)
+    # Initialize the tokenizer
+    tokenizer = get_tokenizer("Qwen/Qwen2.5-Coder-0.5B")
+
+    token_lengths = []
+
+    for example in tqdm(ds, desc=f"Processing Dataset {ds_dir}"):
+        # Get the text from the dataset
+        text = example["text"]
+        # Calculate the token length
+        token_length = calculate_token_length(tokenizer, text)
+        # Append the token length to the list
+        token_lengths.append(token_length)
+
+    return token_lengths
+
+
+def compare_token_lengths(ds_dir_1, ds_dir_2):
     # Load the datasets
     ds_1 = load_file(ds_dir_1)
     ds_2 = load_file(ds_dir_2)
     # Initialize the tokenizer
     tokenizer = get_tokenizer("Qwen/Qwen2.5-Coder-0.5B")
 
-    token_lengths_1 = []
-    token_lengths_2 = []
-
-    for example in tqdm(ds_1, desc="Processing Dataset 1"):
-        # Get the text from the dataset
-        text = example["text"]
-        # Calculate the token length
-        token_length = calculate_token_length(tokenizer, text)
-        # Append the token length to the list
-        token_lengths_1.append(token_length)
-
-    for example in tqdm(ds_2, desc="Processing Dataset 2"):
-        # Get the text from the dataset
-        text = example["text"]
-        # Calculate the token length
-        token_length = calculate_token_length(tokenizer, text)
-        # Append the token length to the list
-        token_lengths_2.append(token_length)
+    token_lengths_1 = calculate_token_stats(ds_dir_1)
+    token_lengths_2 = calculate_token_stats(ds_dir_2)
 
     MIN_BIN = 2048
 
@@ -73,3 +75,39 @@ if __name__ == "__main__":
     ax.legend()
     fig.savefig('token_length_distribution_comparison.png')
     plt.show()
+
+
+def stats():
+    ds_folder = "datasets"
+    # Load the dataset
+    ds_token_lengths = load_file(os.path.join(ds_folder, "token_lengths.json"))
+    for ds_dir, token_lengths in ds_token_lengths.items():
+        print(f"Avg token length for {ds_dir}: {sum(token_lengths) / len(token_lengths)}")
+        print(f"Max token length for {ds_dir}: {max(token_lengths)}")
+
+
+def main():
+    ds_folder = "datasets"
+    # all ds in the folder
+    ds_dirs = os.listdir(ds_folder)
+    ds_dirs = [os.path.join(ds_folder, ds_dir) for ds_dir in ds_dirs]
+    # calculate token length for each dataset
+    ds_token_lengths = {}
+    for ds_dir in ds_dirs:
+        print(f"Calculating token length for {ds_dir}...")
+        token_lengths = calculate_token_stats(ds_dir)
+        avg_token_length = sum(token_lengths) / len(token_lengths)
+        max_token_length = max(token_lengths)
+        print(f"Avg token length for {ds_dir}: {avg_token_length}")
+        print(f"Max token length for {ds_dir}: {max_token_length}")
+        ds_token_lengths[ds_dir] = {
+            "avg_token_length": avg_token_length,
+            "max_token_length": max_token_length,
+            "all_token_lengths": token_lengths
+        }
+
+    save_to_file(os.path.join(ds_folder, "token_lengths.json"), ds_token_lengths)
+
+
+if __name__ == "__main__":
+    main()

@@ -45,19 +45,19 @@ if __name__ == "__main__":
 
     # 处理数据集
     make_sharegpt_dataset(
-        orginal_file="oracle_file_dataset.json",
-        output_dir="sharegpt_oracle_file_dataset.json",
+        orginal_file="oracle_file_notpatch_dataset.json",
+        output_dir="sharegpt_oracle_file_notpatch_dataset.json",
     )
     make_sharegpt_dataset(
-        orginal_file="oracle_file_swe_dataset.json",
-        output_dir="sharegpt_oracle_file_swe_dataset.json",
+        orginal_file="oracle_file_swe_notpatch_dataset.json",
+        output_dir="sharegpt_oracle_file_swe_notpatch_dataset.json",
     )
     make_sharegpt_dataset(
-        orginal_file="oracle_scope_dataset.json",
-        output_dir="sharegpt_oracle_scope_dataset.json",
+        orginal_file="oracle_scope_notpatch_dataset.json",
+        output_dir="sharegpt_oracle_scope_notpatch_dataset.json",
     )
     make_sharegpt_dataset(
-        orginal_file="oracle_scope_swe_dataset.json",
-        output_dir="sharegpt_oracle_scope_swe_dataset.json",
+        orginal_file="oracle_scope_swe_notpatch_dataset.json",
+        output_dir="sharegpt_oracle_scope_swe_notpatch_dataset.json",
     )
     logging.info("数据集处理完成")

@@ -116,16 +116,19 @@ def sqrt(x, epsilon):
 [end of file_b.py]"""
 
 
-def add_lines_list(content, start=-1, end=int(1e5)):
+def add_lines_list(content, start=-1, end=int(1e5), add_line_numbers=True):
     content_with_lines = list()
     for ix, line in enumerate(content.splitlines(), start=1):
         if ix >= start and ix <= end:
-            content_with_lines.append(f"{ix} {line}")
+            if add_line_numbers:
+                content_with_lines.append(f"{ix} {line}")
+            else:
+                content_with_lines.append(line)
     return content_with_lines
 
 
-def add_lines(content, start=-1, end=int(1e5)):
-    return "\n".join(add_lines_list(content, start, end))
+def add_lines(content, start=-1, end=int(1e5), add_line_numbers=True):
+    return "\n".join(add_lines_list(content, start, end, add_line_numbers))
 
 
 def make_code_text_full(files_dict, add_line_numbers=True):
@@ -146,45 +149,20 @@ def make_code_text_full(files_dict, add_line_numbers=True):
     return all_text.strip("\n")
 
 
-def make_code_text_full(files_dict, add_line_numbers=True):
+def make_code_text_full(files_dict):
     all_text = ""
     hunk_i = 0
     for filename, (contents, scopes) in sorted(files_dict.items()):
         all_text += f"[start of {filename}]\n"
         if scopes:
             for name, type, start, end in scopes:
-                all_text += f"<hunk {hunk_i}>\n{add_lines(contents, start, end)}\n</hunk {hunk_i}>\n"
+                all_text += f"{{hunk {hunk_i}}}\n{add_lines(contents, start, end, False)}\n{{/hunk {hunk_i}}}\n"
                 hunk_i += 1
         else:
-            if add_line_numbers:
-                all_text += add_lines(contents)
-            else:
-                all_text += contents
+            all_text += contents
 
         all_text += f"\n[end of {filename}]\n"
     return all_text.strip("\n")
-
-
-def prompt_style(instance):
-    premise = "You will be provided with a partial code base containing bugs to resolve."
-    code_text = make_code_text_full(instance["file_contents"])
-    instructions = (
-        "I need you to solve this issue by generating a single patch file that I can apply "
-        + "directly to this repository using git apply. Please respond with a single patch "
-        + "file in the following format."
-    )
-    final_text = [
-        premise,
-        "<code>",
-        code_text,
-        "</code>",
-        instructions,
-        "<patch>",
-        PATCH_EXAMPLE,
-        "</patch>",
-    ]
-    final_text = "\n".join(final_text)
-    return final_text
 
 
 def prompt_style_with_issue(instance, issues=True, patch=True, readmes=True):

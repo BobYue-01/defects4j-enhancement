@@ -4,21 +4,26 @@ import subprocess
 import argparse
 import shutil
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from checkout_version import TEMP_DIR, checkout_version
 
 
 TIMEOUT = 60 * 5  # 5 minutes
 
+output_data = []
+executor = ThreadPoolExecutor(max_workers=1)
+
 
 def extract_patch(patch_text):
     # Extract the patch from <patch>...</patch> tags
-    start = patch_text.find("<patch>")
-    end = patch_text.find("</patch>")
-    if start == -1 or end == -1:
-        print("⚠️ No <patch> tag found in the patch text.")
-        return patch_text
-    return patch_text[start + len("<patch>"):end].strip()
+    m = re.search(r"<patch>(.*)</patch>", patch_text, re.DOTALL)
+    if m:
+        patch_text = m.group(1)
+    # Remove leading and trailing <patch> tags
+    patch_text = re.sub(r"^<patch>|</patch>$", "", patch_text)
+    # Remove leading and trailing whitespace
+    patch_text = patch_text.strip()
 
 
 def apply_patch(repo_dir, patch_text):
@@ -54,9 +59,6 @@ def run_defects4j_tests(repo_dir):
         return result.stdout, result.returncode
     except Exception as e:
         return str(e), -1
-
-
-output_data = []
 
 
 def test_bug_fix(i, data, pred, logger):
@@ -109,9 +111,6 @@ def test_bug_fix(i, data, pred, logger):
             "result": "failed",
             "information": "Patch application failed."
         })
-
-
-executor = ThreadPoolExecutor(max_workers=1)
 
 
 def main(data_json, pred_jsonl, output_dir="./output"):
